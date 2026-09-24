@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zombie FPS Survival - Fixed Collisions & Bullet Trails</title>
+    <title>Zombie FPS Survival - Full Features & Player NameTags</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Three.js & PointerLockControls -->
@@ -106,7 +106,7 @@
         <div class="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-center shadow-2xl space-y-5">
             <div class="space-y-1">
                 <h1 class="text-3xl font-black text-red-600 uppercase tracking-wider">SỐNG CÒN ZOMBIE 3D</h1>
-                <p class="text-xs text-zinc-400">Đường Đạn 3D - Cây Cối - Chống Xuyên Tường</p>
+                <p class="text-xs text-zinc-400">Hiển Thị Tên Nhân Vật - Đường Đạn - Cây Cối - Anti-Clip</p>
             </div>
 
             <div class="text-left space-y-1">
@@ -217,7 +217,7 @@
         let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
         const velocity = new THREE.Vector3(), direction = new THREE.Vector3();
 
-        const obstacleMeshes = []; // Danh sách vật thể để quét Raycast chống xuyên tường
+        const obstacleMeshes = [];
         const MAP_LIMIT = 142;
 
         const player = { name: "Chiến Binh", hp: 200, maxHp: 200, gold: 0, damageMultiplier: 1.0, clipSizeBonus: 0, currentSkin: 0x22c55e };
@@ -254,6 +254,25 @@
             });
         }
 
+        // HÀM TẠO THẺ TÊN 3D (NAME TAG CANVAS)
+        function createNameTagSprite(nameText) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, 256, 64);
+            ctx.font = 'Bold 28px Arial';
+            ctx.fillStyle = '#facc15';
+            ctx.textAlign = 'center';
+            ctx.fillText(nameText, 128, 42);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.scale.set(2, 0.5, 1);
+            return sprite;
+        }
+
         function updateRemotePlayer(data) {
             if (!remotePlayers[data.id]) {
                 const group = new THREE.Group();
@@ -262,8 +281,13 @@
                 const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
                 head.position.y = 1.8; group.add(head);
 
+                // THÊM TÊN NGƯỜI CHƠI HIỂN THỊ TRÊN ĐẦU
+                const nameSprite = createNameTagSprite(data.name || "Đồng Đội");
+                nameSprite.position.y = 2.4;
+                group.add(nameSprite);
+
                 mapScene.add(group);
-                remotePlayers[data.id] = { mesh: group, bodyMat: body.material };
+                remotePlayers[data.id] = { mesh: group, bodyMat: body.material, nameSprite };
             }
             const p = remotePlayers[data.id];
             p.mesh.position.set(data.x, data.y, data.z);
@@ -314,7 +338,7 @@
                 obstacleMeshes.push(b);
             }
 
-            // CÂY CỐI 3D KHÔI PHỤC
+            // Cây cối 3D
             const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3d2817 });
             const leavesMat = new THREE.MeshStandardMaterial({ color: 0x14532d });
             for (let i = 0; i < 40; i++) {
@@ -354,7 +378,6 @@
             animate();
         }
 
-        // THUẬT TOÁN RAYCAST CHỐNG XUYÊN TƯỜNG CHÍNH XÁC 100%
         function canMoveDirection(dirVector) {
             if (dirVector.lengthSq() === 0) return true;
             const raycaster = new THREE.Raycaster(mapCamera.position, dirVector.clone().normalize(), 0, 1.2);
@@ -378,7 +401,6 @@
                 if (moveForward || moveBackward) velocity.z -= direction.z * 95.0 * delta;
                 if (moveLeft || moveRight) velocity.x -= direction.x * 95.0 * delta;
 
-                // Tính hướng di chuyển thực tế
                 const worldDir = new THREE.Vector3();
                 mapCamera.getWorldDirection(worldDir);
                 worldDir.y = 0; worldDir.normalize();
@@ -388,20 +410,17 @@
                     .addScaledVector(worldDir, -velocity.z * delta)
                     .addScaledVector(sideDir, velocity.x * delta);
 
-                // Nếu phía trước không có tường mới cho phép nhích vị trí
                 if (canMoveDirection(moveVec)) {
                     mapControls.moveRight(-velocity.x * delta);
                     mapControls.moveForward(-velocity.z * delta);
                 }
 
-                // Giới hạn biên Map
                 if (Math.abs(mapCamera.position.x) > MAP_LIMIT) mapCamera.position.x = Math.sign(mapCamera.position.x) * MAP_LIMIT;
                 if (Math.abs(mapCamera.position.z) > MAP_LIMIT) mapCamera.position.z = Math.sign(mapCamera.position.z) * MAP_LIMIT;
 
                 broadcastPlayerState();
             }
 
-            // Zombie Movement & Particles Loop
             if (isPlaying && !isShopOpen) {
                 for (let i = zombiesAlive.length - 1; i >= 0; i--) {
                     const z = zombiesAlive[i];
@@ -419,7 +438,6 @@
                     }
                 }
 
-                // Cập nhật Máu văng
                 for (let i = particles.length - 1; i >= 0; i--) {
                     const p = particles[i];
                     p.life -= delta * 3.0;
@@ -428,7 +446,6 @@
                     if (p.life <= 0) { mapScene.remove(p.mesh); particles.splice(i, 1); }
                 }
 
-                // CẬP NHẬT ĐƯỜNG ĐẠN BẮN (BULLET TRAILS)
                 for (let i = bulletTrails.length - 1; i >= 0; i--) {
                     const t = bulletTrails[i];
                     t.life -= delta * 6.0;
@@ -508,7 +525,6 @@
             }, 3000);
         }
 
-        // TẠO HIỆU ỨNG ĐƯỜNG ĐẠN 3D
         function createTracerLine(targetPos) {
             const points = [
                 mapCamera.position.clone().add(new THREE.Vector3(0, -0.2, -0.2)),
@@ -546,7 +562,6 @@
                 let hitMesh = intersects[0].object;
                 const hitPoint = intersects[0].point;
 
-                // Vẽ vệt đạn tới điểm trúng
                 createTracerLine(hitPoint);
 
                 while (hitMesh.parent && hitMesh.parent.type !== 'Scene') hitMesh = hitMesh.parent;
@@ -559,7 +574,6 @@
                     if (zombie.hp <= 0) killZombie(zombie);
                 }
             } else {
-                // Bắn trượt -> Bắn tia đạn xa 40m
                 const endPos = mapCamera.position.clone().add(raycaster.ray.direction.clone().multiplyScalar(40));
                 createTracerLine(endPos);
             }
