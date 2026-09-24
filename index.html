@@ -1084,7 +1084,18 @@
             document.getElementById('btn-open-shop').addEventListener('click', toggleShop);
             document.getElementById('btn-close-shop').addEventListener('click', toggleShop);
         };
-    </script>document.getElementById('donate-box').style.display = 'none';document.getElementById('donate-box').style.display = 'block';
+        // Hàm ẩn khung Donate (gọi khi bắt đầu chơi game)
+    function hideDonate() {
+        var donateBox = document.getElementById('donate-box');
+        if (donateBox) donateBox.style.display = 'none';
+    }
+
+    // Hàm hiện lại khung Donate (gọi khi Game Over/Thua)
+    function showDonate() {
+        var donateBox = document.getElementById('donate-box');
+        if (donateBox) donateBox.style.display = 'block';
+    }
+    </script>
 </body><!-- Khung Donate -->
 <div id="donate-box" style="
     position: fixed;
