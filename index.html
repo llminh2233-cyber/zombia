@@ -1098,7 +1098,7 @@
         var donateBox = document.getElementById('donate-box');
         if (donateBox) donateBox.style.display = 'block';
     }
-     // ==========================================
+    // ==========================================
     // KHỞI TẠO BẢN ĐỒ 3D VÀ NÚT BẮT ĐẦU CHƠI
     // ==========================================
 
@@ -1231,15 +1231,28 @@
     }
 
     // Gắn sự kiện cho nút BẮT ĐẦU CHƠI khi trang tải xong
-    window.addEventListener('DOMContentLoaded', function () {
+   window.addEventListener('DOMContentLoaded', function () {
         init3DMap();
 
-        // Tìm nút Bắt Đầu Chơi
-        const btnStart = document.getElementById('btn-start') || document.querySelector('button');
+        const btnStart = document.getElementById('btn-start');
         if (btnStart) {
-            btnStart.addEventListener('click', function () {
+            btnStart.addEventListener('click', function (e) {
+                e.stopPropagation();
+                
+                // 1. Ẩn Bảng Menu chính
+                const startMenu = document.getElementById('start-overlay');
+                if (startMenu) {
+                    startMenu.style.display = 'none';
+                }
+
+                // 2. Ẩn khung Donate
+                if (typeof hideDonate === 'function') {
+                    hideDonate();
+                }
+
+                // 3. Khóa con trỏ chuột vào game 3D
                 if (mapControls) {
-                    mapControls.lock(); // Kích hoạt khóa chuột vào game
+                    mapControls.lock();
                 }
             });
         }
