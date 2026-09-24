@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zombie FPS Survival - Đêm Diệt Chủng</title>
-    <!-- Tailwind CSS for modern HUD & UI -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Three.js Library -->
+    <!-- Three.js & PointerLockControls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
     <style>
         body {
             margin: 0;
@@ -33,21 +34,10 @@
             transition: opacity 0.2s ease-out;
             z-index: 10;
         }
-        /* Custom scrollbar for shop menu */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.3);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #ef4444;
-            border-radius: 3px;
-        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
+        ::-webkit-scrollbar-thumb { background: #ef4444; border-radius: 3px; }
     </style>
-    <!-- Thư viện Three.js và bộ điều khiển góc nhìn thứ nhất (Pointer Lock) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
 </head>
 <body class="bg-black text-white">
 
@@ -70,13 +60,12 @@
     <div id="hud" class="absolute inset-0 pointer-events-none p-6 flex flex-col justify-between z-10 hidden">
         <!-- Top Info Bar -->
         <div class="flex justify-between items-start">
-            <!-- Health & Ammo Stats -->
             <div class="space-y-3">
                 <!-- Health Bar -->
                 <div class="bg-black/70 backdrop-blur border border-red-900/50 p-3 rounded-xl w-64 shadow-lg">
                     <div class="flex justify-between text-xs font-bold mb-1 text-red-400">
                         <span>MÁU</span>
-                        <span id="hp-text">100 / 100</span>
+                        <span id="hp-text">200 / 200</span>
                     </div>
                     <div class="w-full bg-zinc-800 h-3 rounded-full overflow-hidden border border-zinc-700">
                         <div id="hp-bar" class="bg-gradient-to-r from-red-600 to-red-400 h-full w-full transition-all duration-300"></div>
@@ -115,14 +104,13 @@
             </div>
         </div>
 
-        <!-- Wave Spawner Status Banner -->
+        <!-- Wave Spawner Banner -->
         <div id="wave-banner" class="self-center bg-red-950/80 border border-red-600/60 text-red-200 px-6 py-2 rounded-full font-bold text-center text-sm shadow-xl backdrop-blur transition-all duration-500 opacity-0 transform -translate-y-4">
             ĐỢT ZOMBIE MỚI ĐANG ĐẾN!
         </div>
 
         <!-- Bottom Ammo & Weapon Bar -->
         <div class="flex justify-between items-end">
-            <!-- Weapon Selected Info -->
             <div class="bg-black/70 backdrop-blur border border-zinc-800 p-4 rounded-xl flex items-center gap-4">
                 <div id="weapon-icon" class="text-3xl">🔫</div>
                 <div>
@@ -131,7 +119,6 @@
                 </div>
             </div>
 
-            <!-- Ammo Counter -->
             <div class="bg-black/70 backdrop-blur border border-zinc-800 px-6 py-3 rounded-xl text-right">
                 <div class="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">Băng Đạn</div>
                 <div class="text-3xl font-black text-white tracking-tight">
@@ -153,7 +140,8 @@
 
             <div class="bg-zinc-950/60 p-4 rounded-xl text-left text-xs text-zinc-300 space-y-2 border border-zinc-800/80">
                 <p class="font-bold text-red-400 text-sm mb-1">🎮 Hướng dẫn điều khiển:</p>
-                <p>• <b class="text-amber-400">Chuột:</b> Xoay màn hình / Nhắm bắn (Pointer Lock)</p>
+                <p>• <b class="text-amber-400">WASD:</b> Di chuyển nhân vật</p>
+                <p>• <b class="text-amber-400">Chuột:</b> Xoay màn hình / Nhắm bắn</p>
                 <p>• <b class="text-amber-400">Chuột Trái:</b> Bắn</p>
                 <p>• <b class="text-amber-400">Phím R:</b> Nạp đạn</p>
                 <p>• <b class="text-amber-400">Phím P:</b> Mở Cửa Hàng / Tạm dừng</p>
@@ -169,7 +157,6 @@
     <!-- Shop Modal Overlay -->
     <div id="shop-modal" class="absolute inset-0 bg-black/80 backdrop-blur-md z-40 flex items-center justify-center p-4 hidden">
         <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-            <!-- Header -->
             <div class="p-5 border-b border-zinc-800 flex justify-between items-center bg-zinc-950/50">
                 <div>
                     <h2 class="text-2xl font-black text-amber-500 flex items-center gap-2">
@@ -183,31 +170,61 @@
                 </div>
             </div>
 
-            <!-- Content Body -->
             <div class="p-6 overflow-y-auto space-y-6 flex-1">
-                <!-- Weapon Selection -->
                 <div>
                     <h3 class="text-sm font-bold text-red-400 uppercase tracking-wider mb-3">1. Mua Vũ Khí Mới</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="weapon-shop-list">
-                        <!-- Populated by JS -->
-                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="weapon-shop-list"></div>
                 </div>
 
-                <!-- Stat Upgrades -->
                 <div>
                     <h3 class="text-sm font-bold text-red-400 uppercase tracking-wider mb-3">2. Nâng Cấp Chỉ Số & Hồi Máu</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="upgrade-shop-list">
-                        <!-- Populated by JS -->
-                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="upgrade-shop-list"></div>
                 </div>
             </div>
 
-            <!-- Footer -->
             <div class="p-4 border-t border-zinc-800 bg-zinc-950/50 flex justify-end">
                 <button id="btn-close-shop" class="bg-zinc-800 hover:bg-zinc-700 text-white font-bold px-6 py-2.5 rounded-xl transition border border-zinc-700">
                     TIẾP TỤC TRẬN ĐẤU (P)
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- Khung Donate -->
+    <div id="donate-box" style="
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.85);
+        color: #fff;
+        padding: 15px;
+        border-radius: 10px;
+        border: 2px solid #00ffcc;
+        font-family: Arial, sans-serif;
+        text-align: center;
+        z-index: 9999;
+        box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+    ">
+        <button onclick="document.getElementById('donate-box').style.display='none'" style="
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            background: transparent;
+            border: none;
+            color: #ff4444;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+        ">✕</button>
+
+        <h3 style="margin: 0 0 8px 0; font-size: 16px; color: #00ffcc;">☕ Ủng hộ phát triển Game</h3>
+        <p style="font-size: 12px; margin: 0 0 10px 0; color: #ccc;">Nếu thấy game hay, hãy donate để giúp mình có thêm động lực nhé!</p>
+        
+        <img src="https://img.vietqr.io/image/MB-0964394926-compact2.png" alt="Mã QR Donate" style="width: 150px; height: 150px; border-radius: 5px; display: block; margin: 0 auto 8px auto;">
+        
+        <div style="font-size: 12px; line-height: 1.4;">
+            <b>Momo:</b> 0964394926<br>
+            <b>STK Ngân hàng:</b> 0964394926 (MB Bank)
         </div>
     </div>
 
@@ -221,11 +238,9 @@
                 if (this.ctx.state === 'suspended') this.ctx.resume();
                 const now = this.ctx.currentTime;
                 
-                // Oscillator for tone component
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
                 
-                // Noise buffer for blast
                 const bufferSize = this.ctx.sampleRate * 0.1;
                 const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
                 const data = buffer.getChannelData(0);
@@ -241,7 +256,6 @@
                     osc.frequency.exponentialRampToValueAtTime(80, now + 0.1);
                     gain.gain.setValueAtTime(0.3, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                    
                     noiseGain.gain.setValueAtTime(0.4, now);
                     noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
                 } else if (weaponType === 'rifle') {
@@ -249,7 +263,6 @@
                     osc.frequency.exponentialRampToValueAtTime(60, now + 0.08);
                     gain.gain.setValueAtTime(0.35, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-                    
                     noiseGain.gain.setValueAtTime(0.5, now);
                     noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.07);
                 } else if (weaponType === 'shotgun') {
@@ -257,7 +270,6 @@
                     osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
                     gain.gain.setValueAtTime(0.6, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-                    
                     noiseGain.gain.setValueAtTime(0.8, now);
                     noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
                 } else if (weaponType === 'sniper') {
@@ -265,7 +277,6 @@
                     osc.frequency.exponentialRampToValueAtTime(50, now + 0.3);
                     gain.gain.setValueAtTime(0.8, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                    
                     noiseGain.gain.setValueAtTime(0.9, now);
                     noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
                 }
@@ -335,7 +346,6 @@
         let isPlaying = false;
         let isShopOpen = false;
         
-        // Game Stats
         const player = {
             hp: 200,
             maxHp: 200,
@@ -345,83 +355,27 @@
             fireRateMultiplier: 1.0
         };
 
-        // Weapon Configurations
         const WEAPONS = {
-            pistol: {
-                id: 'pistol',
-                name: 'Súng Lục (Basic)',
-                type: 'Căn Bản',
-                icon: '🔫',
-                damage: 25,
-                fireRate: 350, // ms between shots
-                clipSize: 12,
-                currentAmmo: 12,
-                unlocked: true,
-                price: 0,
-                pellets: 1,
-                spread: 0.005
-            },
-            rifle: {
-                id: 'rifle',
-                name: 'Súng Bắn Nhanh (Rifle)',
-                type: 'Liên Thanh',
-                icon: '💥',
-                damage: 32,
-                fireRate: 120,
-                clipSize: 30,
-                currentAmmo: 30,
-                unlocked: false,
-                price: 250,
-                pellets: 1,
-                spread: 0.02
-            },
-            shotgun: {
-                id: 'shotgun',
-                name: 'Súng Shotgun',
-                type: 'Sát Thương Lan',
-                icon: '💥',
-                damage: 22, // per pellet
-                fireRate: 750,
-                clipSize: 8,
-                currentAmmo: 8,
-                unlocked: false,
-                price: 500,
-                pellets: 6,
-                spread: 0.08
-            },
-            sniper: {
-                id: 'sniper',
-                name: 'Súng Ngắm (Sniper)',
-                type: 'Chí Mạng',
-                icon: '🎯',
-                damage: 180,
-                fireRate: 1100,
-                clipSize: 5,
-                currentAmmo: 5,
-                unlocked: false,
-                price: 800,
-                pellets: 1,
-                spread: 0.001
-            }
+            pistol: { id: 'pistol', name: 'Súng Lục (Basic)', type: 'Căn Bản', icon: '🔫', damage: 25, fireRate: 350, clipSize: 12, currentAmmo: 12, unlocked: true, price: 0, pellets: 1, spread: 0.005 },
+            rifle: { id: 'rifle', name: 'Súng Bắn Nhanh (Rifle)', type: 'Liên Thanh', icon: '💥', damage: 32, fireRate: 120, clipSize: 30, currentAmmo: 30, unlocked: false, price: 250, pellets: 1, spread: 0.02 },
+            shotgun: { id: 'shotgun', name: 'Súng Shotgun', type: 'Sát Thương Lan', icon: '💥', damage: 22, fireRate: 750, clipSize: 8, currentAmmo: 8, unlocked: false, price: 500, pellets: 6, spread: 0.08 },
+            sniper: { id: 'sniper', name: 'Súng Ngắm (Sniper)', type: 'Chí Mạng', icon: '🎯', damage: 180, fireRate: 1100, clipSize: 5, currentAmmo: 5, unlocked: false, price: 800, pellets: 1, spread: 0.001 }
         };
 
         let currentWeaponKey = 'pistol';
         let lastShotTime = 0;
         let isReloading = false;
 
-        // Wave & Spawning
         let currentWave = 1;
         let zombiesToSpawnInWave = 5;
         let zombiesAlive = [];
         let spawnInterval = null;
 
-        // Particles & Animations
         let particles = [];
         let bulletTrails = [];
 
-        // Camera control vars (Rotation only)
-        let pitch = 0; // vertical angle
-        let yaw = 0;   // horizontal angle
+        let pitch = 0;
+        let yaw = 0;
 
         function initScene() {
             const container = document.getElementById('game-container');
@@ -430,7 +384,7 @@
             scene.fog = new THREE.FogExp2(0x0a0a0f, 0.035);
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 1.7, 0); // Eye height
+            camera.position.set(0, 1.7, 0);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -439,48 +393,18 @@
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             container.appendChild(renderer.domElement);
 
-            // Ambient Light (Dark night feel)
             const ambientLight = new THREE.AmbientLight(0x222233, 0.8);
             scene.add(ambientLight);
 
-            // Point Light near Player
             const playerLight = new THREE.PointLight(0xffaa44, 1.2, 25);
             playerLight.position.set(0, 2, 0);
             scene.add(playerLight);
 
-            // Moon / Directional Light
             const dirLight = new THREE.DirectionalLight(0x446688, 0.6);
             dirLight.position.set(20, 40, -20);
             dirLight.castShadow = true;
             scene.add(dirLight);
 
-            // Create Floor Ground
-            const floorGeo = new THREE.PlaneGeometry(100, 100);
-            const floorMat = new THREE.MeshStandardMaterial({ 
-                color: 0x111115, 
-                roughness: 0.9, 
-                metalness: 0.1 
-            });
-            const floor = new THREE.Mesh(floorGeo, floorMat);
-            floor.rotation.x = -Math.PI / 2;
-            floor.receiveShadow = true;
-            scene.add(floor);
-
-            // Add Environment Details (Ruined Obstacles / Columns)
-            const boxGeo = new THREE.BoxGeometry(2, 4, 2);
-            const boxMat = new THREE.MeshStandardMaterial({ color: 0x22222a, roughness: 0.8 });
-            
-            for (let i = 0; i < 20; i++) {
-                const obstacle = new THREE.Mesh(boxGeo, boxMat);
-                const angle = Math.random() * Math.PI * 2;
-                const dist = 12 + Math.random() * 30;
-                obstacle.position.set(Math.cos(angle) * dist, 2, Math.sin(angle) * dist);
-                obstacle.castShadow = true;
-                obstacle.receiveShadow = true;
-                scene.add(obstacle);
-            }
-
-            // Window resize handler
             window.addEventListener('resize', onWindowResize);
         }
 
@@ -491,78 +415,29 @@
         }
 
         function initControls() {
-            document.addEventListener('mousemove', (e) => {
-                if (!isPlaying || isShopOpen || document.pointerLockElement !== document.body) return;
-
-                const sensitivity = 0.0022;
-                yaw -= e.movementX * sensitivity;
-                pitch -= e.movementY * sensitivity;
-
-                // Clamp vertical look angle
-                pitch = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, pitch));
-
-                // Apply rotation to camera using Euler
-                const euler = new THREE.Euler(0, 0, 0, 'YXZ');
-                euler.x = pitch;
-                euler.y = yaw;
-                camera.quaternion.setFromEuler(euler);
-            });
-
-            // Shoot event
             window.addEventListener('mousedown', (e) => {
-                if (e.button === 0 && isPlaying && !isShopOpen && document.pointerLockElement === document.body) {
+                if (e.button === 0 && isPlaying && !isShopOpen && (mapControls && mapControls.isLocked)) {
                     shootWeapon();
                 }
             });
 
-            // Keyboard events (Reload, Shop)
             window.addEventListener('keydown', (e) => {
                 if (!isPlaying) return;
 
-                if (e.key === 'r' || e.key === 'R') {
-                    reloadWeapon();
-                }
-                if (e.key === 'p' || e.key === 'P') {
-                    toggleShop();
-                }
+                if (e.key === 'r' || e.key === 'R') reloadWeapon();
+                if (e.key === 'p' || e.key === 'P') toggleShop();
             });
         }
 
-        // Zombie Types definition
         const ZOMBIE_TYPES = {
-            NORMAL: {
-                type: 'normal',
-                hp: 80,
-                speed: 3.5,
-                damage: 10,
-                gold: 20,
-                scale: 1.0,
-                color: 0x2e7d32 // Greenish
-            },
-            FAST: {
-                type: 'fast',
-                hp: 40,
-                speed: 6.2,
-                damage: 6,
-                gold: 15,
-                scale: 0.65,
-                color: 0xd84315 // Reddish tint
-            },
-            GIANT: {
-                type: 'giant',
-                hp: 350,
-                speed: 1.8,
-                damage: 28,
-                gold: 75,
-                scale: 1.8,
-                color: 0x4a148c // Purple/dark tint
-            }
+            NORMAL: { type: 'normal', hp: 80, speed: 3.5, damage: 10, gold: 20, scale: 1.0, color: 0x2e7d32 },
+            FAST: { type: 'fast', hp: 40, speed: 6.2, damage: 6, gold: 15, scale: 0.65, color: 0xd84315 },
+            GIANT: { type: 'giant', hp: 350, speed: 1.8, damage: 28, gold: 75, scale: 1.8, color: 0x4a148c }
         };
 
         function createZombieMesh(typeConfig) {
             const group = new THREE.Group();
 
-            // Main Body
             const bodyGeo = new THREE.CylinderGeometry(0.4, 0.3, 1.4, 8);
             const bodyMat = new THREE.MeshStandardMaterial({ color: typeConfig.color, roughness: 0.6 });
             const body = new THREE.Mesh(bodyGeo, bodyMat);
@@ -570,7 +445,6 @@
             body.castShadow = true;
             group.add(body);
 
-            // Head
             const headGeo = new THREE.BoxGeometry(0.4, 0.4, 0.4);
             const headMat = new THREE.MeshStandardMaterial({ color: 0x81c784 });
             const head = new THREE.Mesh(headGeo, headMat);
@@ -578,7 +452,6 @@
             head.castShadow = true;
             group.add(head);
 
-            // Glowing Eyes
             const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
             const eyeGeo = new THREE.BoxGeometry(0.08, 0.08, 0.08);
             const eye1 = new THREE.Mesh(eyeGeo, eyeMat);
@@ -588,7 +461,6 @@
             group.add(eye1);
             group.add(eye2);
 
-            // Scale whole group based on type
             group.scale.setScalar(typeConfig.scale);
 
             return group;
@@ -597,7 +469,6 @@
         function spawnZombie() {
             if (!isPlaying || isShopOpen) return;
 
-            // Determine zombie type based on chance and wave number
             let config = ZOMBIE_TYPES.NORMAL;
             const rand = Math.random();
 
@@ -609,12 +480,14 @@
 
             const mesh = createZombieMesh(config);
 
-            // Spawn in circle around player at radius ~30 to 40
             const angle = Math.random() * Math.PI * 2;
             const distance = 28 + Math.random() * 12;
-            mesh.position.set(Math.cos(angle) * distance, 0, Math.sin(angle) * distance);
+            mesh.position.set(
+                mapCamera.position.x + Math.cos(angle) * distance,
+                0,
+                mapCamera.position.z + Math.sin(angle) * distance
+            );
 
-            // Health scaling with waves
             const hpMultiplier = 1 + (currentWave - 1) * 0.25;
             const maxHp = Math.round(config.hp * hpMultiplier);
 
@@ -629,7 +502,7 @@
                 lastAttackTime: 0
             };
 
-            scene.add(mesh);
+            mapScene.add(mesh);
             zombiesAlive.push(zombieObj);
         }
 
@@ -683,20 +556,16 @@
             updateHUD();
 
             audio.playShot(weapon.id);
-
-            // Muzzle flash effect
             createMuzzleFlash();
 
-            // Raycasting logic for shooting
             const raycaster = new THREE.Raycaster();
 
             for (let i = 0; i < weapon.pellets; i++) {
-                // Apply subtle random spread
                 const spreadX = (Math.random() - 0.5) * weapon.spread;
                 const spreadY = (Math.random() - 0.5) * weapon.spread;
 
                 const centerVector = new THREE.Vector2(spreadX, spreadY);
-                raycaster.setFromCamera(centerVector, camera);
+                raycaster.setFromCamera(centerVector, mapCamera);
 
                 const zombieMeshes = zombiesAlive.map(z => z.mesh);
                 const intersects = raycaster.intersectObjects(zombieMeshes, true);
@@ -705,7 +574,6 @@
                     const hitPoint = intersects[0].point;
                     const hitMesh = intersects[0].object;
 
-                    // Find parent group for hit zombie
                     let targetGroup = hitMesh;
                     while (targetGroup.parent && targetGroup.parent.type !== 'Scene') {
                         targetGroup = targetGroup.parent;
@@ -716,17 +584,14 @@
                         const damageDealt = Math.round(weapon.damage * player.damageMultiplier);
                         zombie.hp -= damageDealt;
 
-                        // Sound & blood effect
                         audio.playZombieHit();
                         createBloodParticles(hitPoint);
 
-                        // Check Zombie Death
                         if (zombie.hp <= 0) {
                             killZombie(zombie);
                         }
                     }
                 } else {
-                    // Create bullet tracer line in 3D space
                     createTracer(raycaster.ray.direction);
                 }
             }
@@ -750,20 +615,14 @@
         }
 
         function killZombie(zombie) {
-            // Reward Gold
-            const goldEarned = zombie.gold;
-            player.gold += goldEarned;
-
-            // Play hit effect
+            player.gold += zombie.gold;
             createDeathExplosion(zombie.mesh.position, zombie.mesh.scale.x);
 
-            // Remove mesh from scene
-            scene.remove(zombie.mesh);
+            mapScene.remove(zombie.mesh);
             zombiesAlive = zombiesAlive.filter(z => z !== zombie);
 
             updateHUD();
 
-            // Check if wave complete
             if (zombiesAlive.length === 0) {
                 currentWave++;
                 setTimeout(() => {
@@ -774,19 +633,19 @@
 
         function createMuzzleFlash() {
             const flash = new THREE.PointLight(0xffaa22, 5, 4);
-            flash.position.set(camera.position.x, camera.position.y - 0.2, camera.position.z - 0.5);
-            scene.add(flash);
-            setTimeout(() => scene.remove(flash), 40);
+            flash.position.set(mapCamera.position.x, mapCamera.position.y - 0.2, mapCamera.position.z - 0.5);
+            mapScene.add(flash);
+            setTimeout(() => mapScene.remove(flash), 40);
         }
 
         function createTracer(dir) {
             const geom = new THREE.BufferGeometry().setFromPoints([
-                camera.position.clone().add(new THREE.Vector3(0, -0.2, -0.2)),
-                camera.position.clone().add(dir.clone().multiplyScalar(30))
+                mapCamera.position.clone().add(new THREE.Vector3(0, -0.2, -0.2)),
+                mapCamera.position.clone().add(dir.clone().multiplyScalar(30))
             ]);
             const mat = new THREE.LineBasicMaterial({ color: 0xffcc44, transparent: true, opacity: 0.6 });
             const line = new THREE.Line(geom, mat);
-            scene.add(line);
+            mapScene.add(line);
             bulletTrails.push({ line, life: 1.0 });
         }
 
@@ -803,8 +662,8 @@
                     Math.random() * 3 + 1,
                     (Math.random() - 0.5) * 4
                 );
-                scene.add(p);
-                particles.push({ mesh: p, vel, life: 1.0 });
+                mapScene.add(p);
+                particles.push({ mesh: p, vel: vel, life: 1.0 });
             }
         }
 
@@ -821,71 +680,9 @@
                     Math.random() * 5 + 2,
                     (Math.random() - 0.5) * 6
                 );
-                scene.add(p);
-                particles.push({ mesh: p, vel, life: 1.0 });
+                mapScene.add(p);
+                particles.push({ mesh: p, vel: vel, life: 1.0 });
             }
-        }
-
-        let clock = new THREE.Clock();
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            const delta = clock.getDelta();
-            const now = performance.now();
-
-            if (isPlaying && !isShopOpen) {
-                // Update Zombies AI Movement
-                for (let i = zombiesAlive.length - 1; i >= 0; i--) {
-                    const z = zombiesAlive[i];
-
-                    // Look at camera player position
-                    z.mesh.lookAt(camera.position.x, z.mesh.position.y, camera.position.z);
-
-                    // Move towards player
-                    const dir = new THREE.Vector3().subVectors(camera.position, z.mesh.position);
-                    dir.y = 0; // standard floor plane move
-                    const dist = dir.length();
-
-                    if (dist > 1.2) {
-                        dir.normalize();
-                        z.mesh.position.addScaledVector(dir, z.speed * delta);
-                    } else {
-                        // Zombie Attack Range
-                        if (now - z.lastAttackTime > 1000) {
-                            z.lastAttackTime = now;
-                            playerTakeDamage(z.damage);
-                        }
-                    }
-                }
-
-                // Update Particle Physics
-                for (let i = particles.length - 1; i >= 0; i--) {
-                    const p = particles[i];
-                    p.life -= delta * 2.5;
-                    p.vel.y -= 9.8 * delta; // Gravity
-                    p.mesh.position.addScaledVector(p.vel, delta);
-
-                    if (p.life <= 0) {
-                        scene.remove(p.mesh);
-                        particles.splice(i, 1);
-                    }
-                }
-
-                // Update Bullet Trails
-                for (let i = bulletTrails.length - 1; i >= 0; i--) {
-                    const t = bulletTrails[i];
-                    t.life -= delta * 5.0;
-                    t.line.material.opacity = t.life;
-
-                    if (t.life <= 0) {
-                        scene.remove(t.line);
-                        bulletTrails.splice(i, 1);
-                    }
-                }
-            }
-
-            renderer.render(scene, camera);
         }
 
         function playerTakeDamage(amount) {
@@ -894,7 +691,6 @@
 
             audio.playHit();
 
-            // Flash Screen Red
             const flash = document.getElementById('damage-flash');
             flash.style.opacity = '1';
             setTimeout(() => { flash.style.opacity = '0'; }, 200);
@@ -908,33 +704,28 @@
 
         function gameOver() {
             isPlaying = false;
-            document.exitPointerLock();
+            if (mapControls) mapControls.unlock();
+            showDonate();
 
             alert(`BẠN ĐÃ THUA!\n\nSố Đợt đã vượt qua: ${currentWave - 1}\nTổng Vàng thu thập: ${player.gold}`);
-
-            // Reset Game
             location.reload();
         }
 
         function updateHUD() {
             const weapon = WEAPONS[currentWeaponKey];
 
-            // Health Bar
             const hpPercent = Math.max(0, (player.hp / player.maxHp) * 100);
             document.getElementById('hp-bar').style.width = `${hpPercent}%`;
             document.getElementById('hp-text').textContent = `${Math.ceil(player.hp)} / ${player.maxHp}`;
 
-            // Money & Wave
             document.getElementById('gold-display').textContent = player.gold;
             document.getElementById('shop-gold-display').textContent = player.gold;
             document.getElementById('wave-display').textContent = currentWave;
 
-            // Weapon
             document.getElementById('weapon-name').textContent = weapon.name;
             document.getElementById('weapon-type-badge').textContent = weapon.type;
             document.getElementById('weapon-icon').textContent = weapon.icon;
 
-            // Ammo
             const maxClip = weapon.clipSize + player.clipSizeBonus;
             document.getElementById('ammo-current').textContent = weapon.currentAmmo;
             document.getElementById('ammo-max').textContent = maxClip;
@@ -973,10 +764,8 @@
                 weaponContainer.appendChild(card);
             });
 
-            // Upgrades List
             const upgradeContainer = document.getElementById('upgrade-shop-list');
             upgradeContainer.innerHTML = `
-                <!-- Damage Upgrade -->
                 <div class="p-4 rounded-xl bg-zinc-950/60 border border-zinc-800 flex justify-between items-center">
                     <div>
                         <div class="font-bold text-sm text-zinc-100">Tăng Sát Thương (+20%)</div>
@@ -987,7 +776,6 @@
                     </button>
                 </div>
 
-                <!-- Ammo Upgrade -->
                 <div class="p-4 rounded-xl bg-zinc-950/60 border border-zinc-800 flex justify-between items-center">
                     <div>
                         <div class="font-bold text-sm text-zinc-100">Mở Rộng Băng Đạn (+5 Đạn)</div>
@@ -1058,242 +846,220 @@
 
             if (isShopOpen) {
                 shopModal.classList.remove('hidden');
-                document.exitPointerLock();
+                if (mapControls) mapControls.unlock();
                 buildShopUI();
             } else {
                 shopModal.classList.add('hidden');
-                if (isPlaying) document.body.requestPointerLock();
+                if (isPlaying && mapControls) mapControls.lock();
             }
         }
 
-        window.onload = function() {
-            initScene();
-            initControls();
-            animate();
+        function hideDonate() {
+            var donateBox = document.getElementById('donate-box');
+            if (donateBox) donateBox.style.display = 'none';
+        }
 
-            // Start Game Button Listener
-            document.getElementById('btn-start').addEventListener('click', () => {
-                document.getElementById('start-overlay').classList.add('hidden');
-                document.getElementById('hud').classList.remove('hidden');
+        function showDonate() {
+            var donateBox = document.getElementById('donate-box');
+            if (donateBox) donateBox.style.display = 'block';
+        }
 
-                isPlaying = true;
-                document.body.requestPointerLock();
+        // ==========================================
+        // KHỞI TẠO BẢN ĐỒ 3D VÀ NÚT BẮT ĐẦU CHƠI
+        // ==========================================
 
-                // Start first wave
-                startNextWave();
+        let mapScene, mapCamera, mapRenderer, mapControls;
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+        const velocity = new THREE.Vector3();
+        const direction = new THREE.Vector3();
+
+        function init3DMap() {
+            mapScene = new THREE.Scene();
+            mapScene.background = new THREE.Color(0x111122);
+            mapScene.fog = new THREE.FogExp2(0x111122, 0.015);
+
+            mapCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            mapCamera.position.y = 2;
+
+            mapRenderer = new THREE.WebGLRenderer({ antialias: true });
+            mapRenderer.setSize(window.innerWidth, window.innerHeight);
+            mapRenderer.domElement.style.position = 'fixed';
+            mapRenderer.domElement.style.top = '0';
+            mapRenderer.domElement.style.left = '0';
+            mapRenderer.domElement.style.zIndex = '0';
+            document.body.appendChild(mapRenderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0x666677);
+            mapScene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+            dirLight.position.set(20, 40, 20);
+            mapScene.add(dirLight);
+
+            mapControls = new THREE.PointerLockControls(mapCamera, document.body);
+
+            mapControls.addEventListener('lock', function () {
+                var startMenu = document.getElementById('start-overlay');
+                if (startMenu) startMenu.style.display = 'none';
+                if (typeof hideDonate === 'function') hideDonate();
             });
 
-            // Shop Buttons
-            document.getElementById('btn-open-shop').addEventListener('click', toggleShop);
-            document.getElementById('btn-close-shop').addEventListener('click', toggleShop);
-        };
-        // Hàm ẩn khung Donate (gọi khi bắt đầu chơi game)
-    function hideDonate() {
-        var donateBox = document.getElementById('donate-box');
-        if (donateBox) donateBox.style.display = 'none';
-    }
+            mapControls.addEventListener('unlock', function () {
+                if (typeof showDonate === 'function') showDonate();
+            });
 
-    // Hàm hiện lại khung Donate (gọi khi Game Over/Thua)
-    function showDonate() {
-        var donateBox = document.getElementById('donate-box');
-        if (donateBox) donateBox.style.display = 'block';
-    }
-    // ==========================================
-    // KHỞI TẠO BẢN ĐỒ 3D VÀ NÚT BẮT ĐẦU CHƠI
-    // ==========================================
+            const floorGeo = new THREE.PlaneGeometry(300, 300);
+            const floorMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            mapScene.add(floor);
 
-    let mapScene, mapCamera, mapRenderer, mapControls;
-    let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
-    const velocity = new THREE.Vector3();
-    const direction = new THREE.Vector3();
+            const buildingMat = new THREE.MeshLambertMaterial({ color: 0x444455 });
+            for (let i = 0; i < 30; i++) {
+                const h = 12 + Math.random() * 25;
+                const w = 8 + Math.random() * 10;
+                const bGeo = new THREE.BoxGeometry(w, h, w);
+                const building = new THREE.Mesh(bGeo, buildingMat);
+                building.position.x = (Math.random() - 0.5) * 200;
+                building.position.z = (Math.random() - 0.5) * 200;
+                building.position.y = h / 2;
+                mapScene.add(building);
+            }
 
-    function init3DMap() {
-        // 1. Scene & Camera
-        mapScene = new THREE.Scene();
-        mapScene.background = new THREE.Color(0x111122);
-        mapScene.fog = new THREE.FogExp2(0x111122, 0.015);
+            const trunkMat = new THREE.MeshLambertMaterial({ color: 0x3d2817 });
+            const leavesMat = new THREE.MeshLambertMaterial({ color: 0x1e3f20 });
+            for (let i = 0; i < 50; i++) {
+                const tree = new THREE.Group();
+                const trunkGeo = new THREE.CylinderGeometry(0.3, 0.5, 4);
+                const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+                trunk.position.y = 2;
+                tree.add(trunk);
 
-        mapCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        mapCamera.position.y = 2; // Tầm mắt nhân vật
+                const leavesGeo = new THREE.ConeGeometry(2, 6, 5);
+                const leaves = new THREE.Mesh(leavesGeo, leavesMat);
+                leaves.position.y = 6;
+                tree.add(leaves);
 
-        mapRenderer = new THREE.WebGLRenderer({ antialias: true });
-        mapRenderer.setSize(window.innerWidth, window.innerHeight);
-        mapRenderer.domElement.style.position = 'fixed';
-        mapRenderer.domElement.style.top = '0';
-        mapRenderer.domElement.style.left = '0';
-        mapRenderer.domElement.style.zIndex = '0'; // Đặt dưới lớp giao diện UI
-        document.body.appendChild(mapRenderer.domElement);
+                tree.position.x = (Math.random() - 0.5) * 220;
+                tree.position.z = (Math.random() - 0.5) * 220;
+                mapScene.add(tree);
+            }
 
-        // 2. Ánh sáng
-        const ambientLight = new THREE.AmbientLight(0x666677);
-        mapScene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-        dirLight.position.set(20, 40, 20);
-        mapScene.add(dirLight);
+            document.addEventListener('keydown', function (e) {
+                if (e.code === 'KeyW' || e.code === 'ArrowUp') moveForward = true;
+                if (e.code === 'KeyS' || e.code === 'ArrowDown') moveBackward = true;
+                if (e.code === 'KeyA' || e.code === 'ArrowLeft') moveLeft = true;
+                if (e.code === 'KeyD' || e.code === 'ArrowRight') moveRight = true;
+            });
 
-        // 3. PointerLock Controls
-        mapControls = new THREE.PointerLockControls(mapCamera, document.body);
+            document.addEventListener('keyup', function (e) {
+                if (e.code === 'KeyW' || e.code === 'ArrowUp') moveForward = false;
+                if (e.code === 'KeyS' || e.code === 'ArrowDown') moveBackward = false;
+                if (e.code === 'KeyA' || e.code === 'ArrowLeft') moveLeft = false;
+                if (e.code === 'KeyD' || e.code === 'ArrowRight') moveRight = false;
+            });
 
-        mapControls.addEventListener('lock', function () {
-            // Khi khóa chuột vào game: Ẩn menu & Ẩn Donate
-            var startMenu = document.getElementById('start-menu') || document.querySelector('.bg-black');
-            if (startMenu) startMenu.style.display = 'none';
-            if (typeof hideDonate === 'function') hideDonate();
-        });
+            let prevTime = performance.now();
+            function animateMap() {
+                requestAnimationFrame(animateMap);
 
-        mapControls.addEventListener('unlock', function () {
-            // Khi nhấn ESC thoát góc nhìn: Hiện lại menu & Hiện Donate
-            if (typeof showDonate === 'function') showDonate();
-        });
-
-        // 4. Tạo Mặt đất
-        const floorGeo = new THREE.PlaneGeometry(300, 300);
-        const floorMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.rotation.x = -Math.PI / 2;
-        mapScene.add(floor);
-
-        // 5. Tạo Tòa nhà bỏ hoang
-        const buildingMat = new THREE.MeshLambertMaterial({ color: 0x444455 });
-        for (let i = 0; i < 30; i++) {
-            const h = 12 + Math.random() * 25;
-            const w = 8 + Math.random() * 10;
-            const bGeo = new THREE.BoxGeometry(w, h, w);
-            const building = new THREE.Mesh(bGeo, buildingMat);
-            building.position.x = (Math.random() - 0.5) * 200;
-            building.position.z = (Math.random() - 0.5) * 200;
-            building.position.y = h / 2;
-            mapScene.add(building);
-        }
-
-        // 6. Tạo Cây cối / Rừng hoang
-        const trunkMat = new THREE.MeshLambertMaterial({ color: 0x3d2817 });
-        const leavesMat = new THREE.MeshLambertMaterial({ color: 0x1e3f20 });
-        for (let i = 0; i < 50; i++) {
-            const tree = new THREE.Group();
-            const trunkGeo = new THREE.CylinderGeometry(0.3, 0.5, 4);
-            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-            trunk.position.y = 2;
-            tree.add(trunk);
-
-            const leavesGeo = new THREE.ConeGeometry(2, 6, 5);
-            const leaves = new THREE.Mesh(leavesGeo, leavesMat);
-            leaves.position.y = 6;
-            tree.add(leaves);
-
-            tree.position.x = (Math.random() - 0.5) * 220;
-            tree.position.z = (Math.random() - 0.5) * 220;
-            mapScene.add(tree);
-        }
-
-        // 7. Bắt sự kiện phím di chuyển (WASD)
-        document.addEventListener('keydown', function (e) {
-            if (e.code === 'KeyW' || e.code === 'ArrowUp') moveForward = true;
-            if (e.code === 'KeyS' || e.code === 'ArrowDown') moveBackward = true;
-            if (e.code === 'KeyA' || e.code === 'ArrowLeft') moveLeft = true;
-            if (e.code === 'KeyD' || e.code === 'ArrowRight') moveRight = true;
-        });
-
-        document.addEventListener('keyup', function (e) {
-            if (e.code === 'KeyW' || e.code === 'ArrowUp') moveForward = false;
-            if (e.code === 'KeyS' || e.code === 'ArrowDown') moveBackward = false;
-            if (e.code === 'KeyA' || e.code === 'ArrowLeft') moveLeft = false;
-            if (e.code === 'KeyD' || e.code === 'ArrowRight') moveRight = false;
-        });
-
-        // Loop render
-        let prevTime = performance.now();
-        function animateMap() {
-            requestAnimationFrame(animateMap);
-
-            if (mapControls && mapControls.isLocked) {
                 const time = performance.now();
                 const delta = (time - prevTime) / 1000;
 
-                velocity.x -= velocity.x * 10.0 * delta;
-                velocity.z -= velocity.z * 10.0 * delta;
+                if (isPlaying && !isShopOpen) {
+                    // Zombie AI tracking
+                    for (let i = zombiesAlive.length - 1; i >= 0; i--) {
+                        const z = zombiesAlive[i];
+                        z.mesh.lookAt(mapCamera.position.x, z.mesh.position.y, mapCamera.position.z);
 
-                direction.z = Number(moveForward) - Number(moveBackward);
-                direction.x = Number(moveRight) - Number(moveLeft);
-                direction.normalize();
+                        const dir = new THREE.Vector3().subVectors(mapCamera.position, z.mesh.position);
+                        dir.y = 0;
+                        const dist = dir.length();
 
-                if (moveForward || moveBackward) velocity.z -= direction.z * 120.0 * delta;
-                if (moveLeft || moveRight) velocity.x -= direction.x * 120.0 * delta;
+                        if (dist > 1.2) {
+                            dir.normalize();
+                            z.mesh.position.addScaledVector(dir, z.speed * delta);
+                        } else {
+                            if (time - z.lastAttackTime > 1000) {
+                                z.lastAttackTime = time;
+                                playerTakeDamage(z.damage);
+                            }
+                        }
+                    }
 
-                mapControls.moveRight(-velocity.x * delta);
-                mapControls.moveForward(-velocity.z * delta);
+                    // Particles Loop
+                    for (let i = particles.length - 1; i >= 0; i--) {
+                        const p = particles[i];
+                        p.life -= delta * 2.5;
+                        p.vel.y -= 9.8 * delta;
+                        p.mesh.position.addScaledVector(p.vel, delta);
+
+                        if (p.life <= 0) {
+                            mapScene.remove(p.mesh);
+                            particles.splice(i, 1);
+                        }
+                    }
+
+                    // Bullet Trails Loop
+                    for (let i = bulletTrails.length - 1; i >= 0; i--) {
+                        const t = bulletTrails[i];
+                        t.life -= delta * 5.0;
+                        t.line.material.opacity = t.life;
+
+                        if (t.life <= 0) {
+                            mapScene.remove(t.line);
+                            bulletTrails.splice(i, 1);
+                        }
+                    }
+                }
+
+                if (mapControls && mapControls.isLocked) {
+                    velocity.x -= velocity.x * 10.0 * delta;
+                    velocity.z -= velocity.z * 10.0 * delta;
+
+                    direction.z = Number(moveForward) - Number(moveBackward);
+                    direction.x = Number(moveRight) - Number(moveLeft);
+                    direction.normalize();
+
+                    if (moveForward || moveBackward) velocity.z -= direction.z * 120.0 * delta;
+                    if (moveLeft || moveRight) velocity.x -= direction.x * 120.0 * delta;
+
+                    mapControls.moveRight(-velocity.x * delta);
+                    mapControls.moveForward(-velocity.z * delta);
+                }
 
                 prevTime = time;
+                mapRenderer.render(mapScene, mapCamera);
             }
-            mapRenderer.render(mapScene, mapCamera);
+            animateMap();
         }
-        animateMap();
-    }
 
-    // Gắn sự kiện cho nút BẮT ĐẦU CHƠI khi trang tải xong
-   window.addEventListener('DOMContentLoaded', function () {
-        init3DMap();
+        window.addEventListener('DOMContentLoaded', function () {
+            initScene();
+            initControls();
+            init3DMap();
 
-        const btnStart = document.getElementById('btn-start');
-        if (btnStart) {
-            btnStart.addEventListener('click', function (e) {
-                e.stopPropagation();
-                
-                // 1. Ẩn Bảng Menu chính
-                const startMenu = document.getElementById('start-overlay');
-                if (startMenu) {
-                    startMenu.style.display = 'none';
-                }
+            const btnStart = document.getElementById('btn-start');
+            if (btnStart) {
+                btnStart.addEventListener('click', function (e) {
+                    e.stopPropagation();
 
-                // 2. Ẩn khung Donate
-                if (typeof hideDonate === 'function') {
-                    hideDonate();
-                }
+                    const startMenu = document.getElementById('start-overlay');
+                    if (startMenu) startMenu.style.display = 'none';
 
-                // 3. Khóa con trỏ chuột vào game 3D
-                if (mapControls) {
-                    mapControls.lock();
-                }
-            });
-        }
-    });
+                    document.getElementById('hud').classList.remove('hidden');
+
+                    if (typeof hideDonate === 'function') hideDonate();
+
+                    isPlaying = true;
+                    if (mapControls) mapControls.lock();
+
+                    startNextWave();
+                });
+            }
+
+            document.getElementById('btn-open-shop').addEventListener('click', toggleShop);
+            document.getElementById('btn-close-shop').addEventListener('click', toggleShop);
+        });
     </script>
-</body><!-- Khung Donate -->
-<div id="donate-box" style="
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: rgba(0, 0, 0, 0.85);
-    color: #fff;
-    padding: 15px;
-    border-radius: 10px;
-    border: 2px solid #00ffcc;
-    font-family: Arial, sans-serif;
-    text-align: center;
-    z-index: 9999;
-    box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
-">
-    <!-- Nút đóng/ẩn Donate -->
-    <button onclick="document.getElementById('donate-box').style.display='none'" style="
-        position: absolute;
-        top: 5px;
-        right: 8px;
-        background: transparent;
-        border: none;
-        color: #ff4444;
-        font-weight: bold;
-        font-size: 16px;
-        cursor: pointer;
-    ">✕</button>
-
-    <h3 style="margin: 0 0 8px 0; font-size: 16px; color: #00ffcc;">☕ Ủng hộ phát triển Game</h3>
-    <p style="font-size: 12px; margin: 0 0 10px 0; color: #ccc;">Nếu thấy game hay, hãy donate để giúp mình có thêm động lực nhé!</p>
-    
-    <img src="https://img.vietqr.io/image/MB-0964394926-compact2.png" alt="Mã QR Donate" style="width: 150px; height: 150px; border-radius: 5px; display: block; margin: 0 auto 8px auto;">
-    
-    <div style="font-size: 12px; line-height: 1.4;">
-        <b>Momo:</b> 0964394926<br>
-        <b>STK Ngân hàng:</b> 0964394926 (MB Bank)
-    </div>
-</div>
+</body>
 </html>
