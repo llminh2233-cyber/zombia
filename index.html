@@ -45,6 +45,9 @@
             border-radius: 3px;
         }
     </style>
+    <!-- Thư viện Three.js và bộ điều khiển góc nhìn thứ nhất (Pointer Lock) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
 </head>
 <body class="bg-black text-white">
 
@@ -1095,6 +1098,138 @@
         var donateBox = document.getElementById('donate-box');
         if (donateBox) donateBox.style.display = 'block';
     }
+        // ==========================================
+    // KHỞI TẠO BẢN ĐỒ 3D VÀ HỆ THỐNG DI CHUYỂN
+    // ==========================================
+
+    // 1. Tạo Không gian (Scene), Camera và Sương mù thành phố
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x111122); 
+    scene.fog = new THREE.FogExp2(0x111122, 0.015);
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // 2. Ánh sáng cho bản đồ
+    const ambientLight = new THREE.AmbientLight(0x666677);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    dirLight.position.set(20, 40, 20);
+    scene.add(dirLight);
+
+    // 3. Hệ thống Điều khiển (WASD + Chuột)
+    const controls = new THREE.PointerLockControls(camera, document.body);
+
+    // Khi người chơi bấm vào màn hình/nút bắt đầu
+    document.body.addEventListener('click', function() {
+        if (!controls.isLocked) {
+            controls.lock();
+        }
+    });
+
+    controls.addEventListener('lock', function() {
+        if (typeof hideDonate === 'function') hideDonate(); // Tự động ẩn Donate khi di chuyển chơi game
+    });
+
+    controls.addEventListener('unlock', function() {
+        if (typeof showDonate === 'function') showDonate(); // Hiện lại Donate khi tạm dừng/thoát
+    });
+
+    let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+    const velocity = new THREE.Vector3();
+    const direction = new THREE.Vector3();
+
+    document.addEventListener('keydown', function(e) {
+        if (e.code === 'KeyW' || e.code === 'ArrowUp') moveForward = true;
+        if (e.code === 'KeyS' || e.code === 'ArrowDown') moveBackward = true;
+        if (e.code === 'KeyA' || e.code === 'ArrowLeft') moveLeft = true;
+        if (e.code === 'KeyD' || e.code === 'ArrowRight') moveRight = true;
+    });
+
+    document.addEventListener('keyup', function(e) {
+        if (e.code === 'KeyW' || e.code === 'ArrowUp') moveForward = false;
+        if (e.code === 'KeyS' || e.code === 'ArrowDown') moveBackward = false;
+        if (e.code === 'KeyA' || e.code === 'ArrowLeft') moveLeft = false;
+        if (e.code === 'KeyD' || e.code === 'ArrowRight') moveRight = false;
+    });
+
+    // 4. Tạo Mặt đất
+    const floorGeo = new THREE.PlaneGeometry(300, 300);
+    const floorMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    scene.add(floor);
+
+    // 5. Tạo Các Tòa Nhà Thành Phố Bỏ Hoang
+    const buildingMat = new THREE.MeshLambertMaterial({ color: 0x444455 });
+    for (let i = 0; i < 30; i++) {
+        const h = 12 + Math.random() * 25;
+        const w = 8 + Math.random() * 10;
+        const bGeo = new THREE.BoxGeometry(w, h, w);
+        const building = new THREE.Mesh(bGeo, buildingMat);
+        building.position.x = (Math.random() - 0.5) * 200;
+        building.position.z = (Math.random() - 0.5) * 200;
+        building.position.y = h / 2;
+        scene.add(building);
+    }
+
+    // 6. Tạo Khu Rừng / Cây Cối Bỏ Hoang
+    const trunkMat = new THREE.MeshLambertMaterial({ color: 0x3d2817 });
+    const leavesMat = new THREE.MeshLambertMaterial({ color: 0x1e3f20 });
+    for (let i = 0; i < 50; i++) {
+        const tree = new THREE.Group();
+        const trunkGeo = new THREE.CylinderGeometry(0.3, 0.5, 4);
+        const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+        trunk.position.y = 2;
+        tree.add(trunk);
+
+        const leavesGeo = new THREE.ConeGeometry(2, 6, 5);
+        const leaves = new THREE.Mesh(leavesGeo, leavesMat);
+        leaves.position.y = 6;
+        tree.add(leaves);
+
+        tree.position.x = (Math.random() - 0.5) * 220;
+        tree.position.z = (Math.random() - 0.5) * 220;
+        scene.add(tree);
+    }
+
+    camera.position.y = 2; // Tầm mắt nhân vật
+
+    // 7. Vòng lặp cập nhật chuyển động (Game Loop)
+    let prevTime = performance.now();
+    function animateMap() {
+        requestAnimationFrame(animateMap);
+
+        const time = performance.now();
+        if (controls.isLocked) {
+            const delta = (time - prevTime) / 1000;
+
+            velocity.x -= velocity.x * 10.0 * delta;
+            velocity.z -= velocity.z * 10.0 * delta;
+
+            direction.z = Number(moveForward) - Number(moveBackward);
+            direction.x = Number(moveRight) - Number(moveLeft);
+            direction.normalize();
+
+            if (moveForward || moveBackward) velocity.z -= direction.z * 120.0 * delta;
+            if (moveLeft || moveRight) velocity.x -= direction.x * 120.0 * delta;
+
+            controls.moveRight(-velocity.x * delta);
+            controls.moveForward(-velocity.z * delta);
+        }
+        prevTime = time;
+        renderer.render(scene, camera);
+    }
+    animateMap();
+
+    // Tự động điều chỉnh kích thước màn hình
+    window.addEventListener('resize', function() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
     </script>
 </body><!-- Khung Donate -->
 <div id="donate-box" style="
