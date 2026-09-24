@@ -3,42 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zombie FPS Survival - Multiplayer & Skins</title>
+    <title>Zombie FPS Survival - Sửa Lỗi Va Chạm & Multiplayer</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Three.js & PointerLockControls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
-    <!-- PeerJS for Multiplayer WebRTC -->
+    <!-- PeerJS for Multiplayer -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            user-select: none;
-            background-color: #050505;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        #crosshair {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            z-index: 20;
-        }
-        .damage-overlay {
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle, transparent 60%, rgba(220, 38, 38, 0.6) 100%);
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s ease-out;
-            z-index: 10;
-        }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
-        ::-webkit-scrollbar-thumb { background: #ef4444; border-radius: 3px; }
+        body { margin: 0; overflow: hidden; user-select: none; background-color: #050505; font-family: sans-serif; }
+        #crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 20; }
+        .damage-overlay { position: absolute; inset: 0; background: radial-gradient(circle, transparent 60%, rgba(220, 38, 38, 0.6) 100%); pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 10; }
     </style>
 </head>
 <body class="bg-black text-white">
@@ -46,11 +22,11 @@
     <div id="game-container" class="w-full h-screen relative"></div>
     <div id="damage-flash" class="damage-overlay"></div>
 
-    <!-- Center Crosshair -->
+    <!-- Crosshair -->
     <div id="crosshair">
         <div class="w-6 h-6 relative flex items-center justify-center">
-            <div class="absolute w-2 h-0.5 bg-red-500 rounded"></div>
-            <div class="absolute h-2 w-0.5 bg-red-500 rounded"></div>
+            <div class="absolute w-2 h-0.5 bg-red-500"></div>
+            <div class="absolute h-2 w-0.5 bg-red-500"></div>
             <div class="w-1 h-1 bg-red-400 rounded-full"></div>
         </div>
     </div>
@@ -59,290 +35,127 @@
     <div id="hud" class="absolute inset-0 pointer-events-none p-6 flex flex-col justify-between z-10 hidden">
         <div class="flex justify-between items-start">
             <div class="space-y-3">
-                <div class="bg-black/70 backdrop-blur border border-red-900/50 p-3 rounded-xl w-64 shadow-lg">
+                <div class="bg-black/70 p-3 rounded-xl w-64 border border-red-900/50">
                     <div class="flex justify-between text-xs font-bold mb-1 text-red-400">
-                        <span>MÁU</span>
-                        <span id="hp-text">200 / 200</span>
+                        <span>MÁU</span><span id="hp-text">200 / 200</span>
                     </div>
-                    <div class="w-full bg-zinc-800 h-3 rounded-full overflow-hidden border border-zinc-700">
-                        <div id="hp-bar" class="bg-gradient-to-r from-red-600 to-red-400 h-full w-full transition-all duration-300"></div>
+                    <div class="w-full bg-zinc-800 h-3 rounded-full overflow-hidden">
+                        <div id="hp-bar" class="bg-red-600 h-full w-full transition-all"></div>
                     </div>
                 </div>
-
                 <div class="flex gap-3">
-                    <div class="bg-black/70 backdrop-blur border border-yellow-600/40 px-4 py-2 rounded-xl flex items-center gap-2">
-                        <span class="text-xl">🪙</span>
-                        <div>
-                            <div class="text-[10px] text-yellow-500 uppercase font-semibold">Vàng</div>
-                            <div id="gold-display" class="text-lg font-bold text-yellow-400">0</div>
-                        </div>
+                    <div class="bg-black/70 px-4 py-2 rounded-xl border border-yellow-600/40 text-yellow-400 font-bold">
+                        🪙 <span id="gold-display">0</span> Vàng
                     </div>
-
-                    <div class="bg-black/70 backdrop-blur border border-red-600/40 px-4 py-2 rounded-xl flex items-center gap-2">
-                        <span class="text-xl">💀</span>
-                        <div>
-                            <div class="text-[10px] text-red-500 uppercase font-semibold">Đợt Zombie</div>
-                            <div id="wave-display" class="text-lg font-bold text-red-400">1</div>
-                        </div>
+                    <div class="bg-black/70 px-4 py-2 rounded-xl border border-red-600/40 text-red-400 font-bold">
+                        💀 Đợt <span id="wave-display">1</span>
                     </div>
                 </div>
             </div>
-
-            <div class="flex flex-col items-end gap-2 pointer-events-auto">
-                <button id="btn-open-shop" class="bg-gradient-to-r from-yellow-600 to-amber-500 hover:from-yellow-500 hover:to-amber-400 text-black font-extrabold px-5 py-2.5 rounded-xl shadow-lg transform active:scale-95 transition border border-yellow-300/30 flex items-center gap-2">
-                    🛒 CỬA HÀNG (P)
-                </button>
-                <div id="reload-warning" class="hidden text-amber-400 font-bold animate-pulse text-sm bg-black/80 px-3 py-1 rounded-lg border border-amber-500/30">
-                    BẤM 'R' ĐỂ NẠP ĐẠN!
-                </div>
+            <div class="pointer-events-auto">
+                <button id="btn-open-shop" class="bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold px-5 py-2.5 rounded-xl">🛒 CỬA HÀNG (P)</button>
             </div>
         </div>
-
-        <div id="wave-banner" class="self-center bg-red-950/80 border border-red-600/60 text-red-200 px-6 py-2 rounded-full font-bold text-center text-sm shadow-xl backdrop-blur transition-all duration-500 opacity-0 transform -translate-y-4">
-            ĐỢT ZOMBIE MỚI ĐANG ĐẾN!
-        </div>
-
         <div class="flex justify-between items-end">
-            <div class="bg-black/70 backdrop-blur border border-zinc-800 p-4 rounded-xl flex items-center gap-4">
-                <div id="weapon-icon" class="text-3xl">🔫</div>
-                <div>
-                    <div id="weapon-name" class="font-extrabold text-zinc-100 text-base">Súng Lục</div>
-                    <div id="weapon-type-badge" class="text-xs text-red-400 uppercase font-semibold">Căn Bản</div>
-                </div>
+            <div class="bg-black/70 p-4 rounded-xl border border-zinc-800">
+                <div id="weapon-name" class="font-extrabold text-white">Súng Lục</div>
+                <div id="weapon-type-badge" class="text-xs text-red-400">Căn Bản</div>
             </div>
-
-            <div class="bg-black/70 backdrop-blur border border-zinc-800 px-6 py-3 rounded-xl text-right">
-                <div class="text-[10px] text-zinc-400 uppercase font-semibold">Băng Đạn</div>
-                <div class="text-3xl font-black text-white tracking-tight">
-                    <span id="ammo-current" class="text-amber-400">12</span>
-                    <span class="text-zinc-600 text-xl">/</span>
-                    <span id="ammo-max" class="text-zinc-400 text-xl">12</span>
-                </div>
+            <div class="bg-black/70 px-6 py-3 rounded-xl border border-zinc-800 text-right">
+                <div class="text-[10px] text-zinc-400 font-semibold">ĐẠN</div>
+                <div class="text-3xl font-black"><span id="ammo-current" class="text-amber-400">12</span> / <span id="ammo-max" class="text-zinc-400">12</span></div>
             </div>
         </div>
     </div>
 
-    <!-- Start / Menu Overlay -->
-    <div id="start-overlay" class="absolute inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center z-30 p-4">
-        <div class="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-center shadow-2xl space-y-5">
-            <div class="space-y-1">
-                <h1 class="text-3xl font-black text-red-600 uppercase tracking-wider">SỐNG CÒN ZOMBIE 3D</h1>
-                <p class="text-xs text-zinc-400">Multiplayer & Va chạm Vật lý</p>
-            </div>
-
-            <!-- Tên Nhân Vật -->
+    <!-- Start Overlay -->
+    <div id="start-overlay" class="absolute inset-0 bg-black/90 flex flex-col items-center justify-center z-30 p-4">
+        <div class="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-center space-y-4">
+            <h1 class="text-3xl font-black text-red-600 uppercase">SỐNG CÒN ZOMBIE 3D</h1>
+            
             <div class="text-left space-y-1">
-                <label class="text-xs font-bold text-zinc-400 uppercase">Tên Nhân Vật Của Bạn:</label>
-                <input id="player-name-input" type="text" value="Chiến Binh" maxlength="15" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-sm text-yellow-400 font-bold focus:outline-none focus:border-red-500">
+                <label class="text-xs font-bold text-zinc-400">TÊN NHÂN VẬT:</label>
+                <input id="player-name-input" type="text" value="Chiến Binh" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-sm text-yellow-400 font-bold">
             </div>
 
             <!-- Multiplayer Box -->
-            <div class="bg-zinc-950 p-4 rounded-xl text-left border border-zinc-800/80 space-y-3">
-                <div class="text-xs font-bold text-amber-400 uppercase">🌐 TÍNH NĂNG MẠNG (MULTIPLAYER)</div>
+            <div class="bg-zinc-950 p-4 rounded-xl text-left border border-zinc-800 space-y-3">
+                <div class="text-xs font-bold text-amber-400 uppercase">🌐 PHÒNG CHƠI CHUNG</div>
                 <div class="flex gap-2">
                     <button id="btn-create-room" class="flex-1 bg-zinc-800 hover:bg-zinc-700 text-xs font-bold py-2 rounded-lg border border-zinc-700">Tạo Phòng</button>
-                    <button id="btn-join-room" class="flex-1 bg-zinc-800 hover:bg-zinc-700 text-xs font-bold py-2 rounded-lg border border-zinc-700">Vào Phòng</button>
+                    <button id="btn-copy-code" class="hidden bg-amber-600 hover:bg-amber-500 text-black text-xs font-bold px-3 py-2 rounded-lg">Copy Mã</button>
                 </div>
-                <div id="room-status" class="text-[11px] text-zinc-400 break-all">Mã Phòng: <span id="my-peer-id" class="text-yellow-400 font-mono">Đang khởi tạo...</span></div>
-                <input id="join-room-id" type="text" placeholder="Dán mã phòng của bạn vào đây..." class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-200 hidden focus:outline-none focus:border-amber-500">
+                <div id="room-status" class="text-xs text-zinc-400">Mã phòng của bạn: <span id="my-peer-id" class="text-yellow-400 font-mono font-bold">Chưa tạo</span></div>
+                
+                <div class="flex gap-2">
+                    <input id="join-room-id" type="text" placeholder="Nhập mã 6 ký tự..." class="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-200">
+                    <button id="btn-join-room" class="bg-red-600 hover:bg-red-500 text-xs font-bold px-4 py-1.5 rounded-lg">Vào</button>
+                </div>
             </div>
 
-            <button id="btn-start" class="w-full bg-red-600 hover:bg-red-500 text-white font-extrabold py-3.5 rounded-xl shadow-lg shadow-red-900/40 transform active:scale-95 transition text-base tracking-wide uppercase">
-                BẮT ĐẦU CHƠI SINGLEPLAYER
-            </button>
+            <button id="btn-start" class="w-full bg-red-600 hover:bg-red-500 text-white font-extrabold py-3.5 rounded-xl uppercase">BẮT ĐẦU CHƠI SINGLEPLAYER</button>
         </div>
     </div>
 
-    <!-- Shop Modal Overlay -->
-    <div id="shop-modal" class="absolute inset-0 bg-black/80 backdrop-blur-md z-40 flex items-center justify-center p-4 hidden">
-        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-            <div class="p-5 border-b border-zinc-800 flex justify-between items-center bg-zinc-950/50">
-                <div>
-                    <h2 class="text-2xl font-black text-amber-500 flex items-center gap-2">
-                        <span>🛒</span> CỬA HÀNG VŨ KHÍ & SKIN
-                    </h2>
-                </div>
-                <div class="bg-zinc-800/80 px-4 py-2 rounded-xl border border-amber-500/30 font-bold text-amber-400 flex items-center gap-2">
-                    <span>🪙</span> <span id="shop-gold-display">0</span> Vàng
-                </div>
+    <!-- Shop Modal -->
+    <div id="shop-modal" class="absolute inset-0 bg-black/80 z-40 flex items-center justify-center p-4 hidden">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-2xl w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+                <h2 class="text-xl font-bold text-amber-500">🛒 CỬA HÀNG VŨ KHÍ & SKIN</h2>
+                <div class="text-amber-400 font-bold">🪙 <span id="shop-gold-display">0</span> Vàng</div>
             </div>
-
-            <div class="p-6 overflow-y-auto space-y-6 flex-1">
-                <div>
-                    <h3 class="text-sm font-bold text-red-400 uppercase tracking-wider mb-3">1. Mua Vũ Khí Mới</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="weapon-shop-list"></div>
-                </div>
-
-                <div>
-                    <h3 class="text-sm font-bold text-yellow-400 uppercase tracking-wider mb-3">2. Skin Nhân Vật</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="skin-shop-list"></div>
-                </div>
-
-                <div>
-                    <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wider mb-3">3. Nâng Cấp & Hồi Máu</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="upgrade-shop-list"></div>
-                </div>
-            </div>
-
-            <div class="p-4 border-t border-zinc-800 bg-zinc-950/50 flex justify-end">
-                <button id="btn-close-shop" class="bg-zinc-800 hover:bg-zinc-700 text-white font-bold px-6 py-2.5 rounded-xl transition border border-zinc-700">
-                    TIẾP TỤC TRẬN ĐẤU (P)
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Donate Box -->
-    <div id="donate-box" style="position: fixed; bottom: 20px; right: 20px; background: rgba(0, 0, 0, 0.85); color: #fff; padding: 15px; border-radius: 10px; border: 2px solid #00ffcc; font-family: Arial, sans-serif; text-align: center; z-index: 9999; box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);">
-        <button onclick="document.getElementById('donate-box').style.display='none'" style="position: absolute; top: 5px; right: 8px; background: transparent; border: none; color: #ff4444; font-weight: bold; font-size: 16px; cursor: pointer;">✕</button>
-        <h3 style="margin: 0 0 8px 0; font-size: 16px; color: #00ffcc;">☕ Ủng hộ phát triển Game</h3>
-        <p style="font-size: 12px; margin: 0 0 10px 0; color: #ccc;">Nếu thấy game hay, hãy donate để giúp mình có thêm động lực nhé!</p>
-        <img src="https://img.vietqr.io/image/MB-0964394926-compact2.png" alt="Mã QR Donate" style="width: 150px; height: 150px; border-radius: 5px; display: block; margin: 0 auto 8px auto;">
-        <div style="font-size: 12px; line-height: 1.4;">
-            <b>Momo:</b> 0964394926<br>
-            <b>STK Ngân hàng:</b> 0964394926 (MB Bank)
+            <div class="space-y-3 max-h-[60vh] overflow-y-auto" id="shop-content"></div>
+            <button id="btn-close-shop" class="w-full bg-zinc-800 hover:bg-zinc-700 py-2 rounded-xl font-bold">ĐÓNG (P)</button>
         </div>
     </div>
 
     <script>
-        // --- AUDIO FX SYSTEM ---
         class AudioFX {
             constructor() { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
-            playShot(type) {
+            playShot() {
                 if (this.ctx.state === 'suspended') this.ctx.resume();
-                const now = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.frequency.setValueAtTime(type === 'sniper' ? 600 : 350, now);
-                osc.frequency.exponentialRampToValueAtTime(50, now + 0.15);
-                gain.gain.setValueAtTime(0.4, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-                osc.connect(gain); gain.connect(this.ctx.destination);
-                osc.start(now); osc.stop(now + 0.15);
+                const now = this.ctx.currentTime, osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+                osc.frequency.setValueAtTime(350, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.12);
+                gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                osc.connect(gain); gain.connect(this.ctx.destination); osc.start(now); osc.stop(now + 0.12);
             }
             playHit() {
                 if (this.ctx.state === 'suspended') this.ctx.resume();
-                const now = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(120, now);
-                gain.gain.setValueAtTime(0.3, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                osc.connect(gain); gain.connect(this.ctx.destination);
-                osc.start(now); osc.stop(now + 0.1);
-            }
-            playReload() {
-                if (this.ctx.state === 'suspended') this.ctx.resume();
-                const now = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.frequency.setValueAtTime(600, now);
-                osc.frequency.setValueAtTime(900, now + 0.1);
-                gain.gain.setValueAtTime(0.15, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-                osc.connect(gain); gain.connect(this.ctx.destination);
-                osc.start(now); osc.stop(now + 0.2);
+                const now = this.ctx.currentTime, osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now);
+                gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.connect(gain); gain.connect(this.ctx.destination); osc.start(now); osc.stop(now + 0.1);
             }
         }
         const audio = new AudioFX();
 
-        // --- GLOBAL VARIABLES ---
         let isPlaying = false, isShopOpen = false;
         let mapScene, mapCamera, mapRenderer, mapControls;
         let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
         const velocity = new THREE.Vector3(), direction = new THREE.Vector3();
 
-        // Player Data
-        const player = {
-            name: "Chiến Binh",
-            hp: 200, maxHp: 200, gold: 0,
-            damageMultiplier: 1.0, clipSizeBonus: 0, fireRateMultiplier: 1.0,
-            currentSkin: 0x22c55e
-        };
-
-        // Obstacles for Collisions
         const colliderBoxes = [];
-        const MAP_LIMIT = 145; // Invisible wall boundary (+-145)
+        const MAP_LIMIT = 140;
 
-        // Weapons Config
+        const player = { name: "Chiến Binh", hp: 200, maxHp: 200, gold: 0, damageMult: 1.0, currentSkin: 0x22c55e };
         const WEAPONS = {
-            pistol: { id: 'pistol', name: 'Súng Lục', type: 'Căn Bản', icon: '🔫', damage: 25, fireRate: 350, clipSize: 12, currentAmmo: 12, unlocked: true, price: 0, pellets: 1, spread: 0.005 },
-            rifle: { id: 'rifle', name: 'Súng Bắn Nhanh', type: 'Liên Thanh', icon: '💥', damage: 32, fireRate: 120, clipSize: 30, currentAmmo: 30, unlocked: false, price: 250, pellets: 1, spread: 0.02 },
-            shotgun: { id: 'shotgun', name: 'Súng Shotgun', type: 'Sát Thương Lan', icon: '💥', damage: 22, fireRate: 750, clipSize: 8, currentAmmo: 8, unlocked: false, price: 500, pellets: 6, spread: 0.08 },
-            sniper: { id: 'sniper', name: 'Súng Ngắm', type: 'Chí Mạng', icon: '🎯', damage: 180, fireRate: 1100, clipSize: 5, currentAmmo: 5, unlocked: false, price: 800, pellets: 1, spread: 0.001 }
+            pistol: { name: 'Súng Lục', type: 'Căn Bản', damage: 25, fireRate: 350, clipSize: 12, currentAmmo: 12, unlocked: true, price: 0 },
+            rifle: { name: 'Súng Bắn Nhanh', type: 'Liên Thanh', damage: 35, fireRate: 130, clipSize: 30, currentAmmo: 30, unlocked: false, price: 250 },
+            sniper: { name: 'Súng Ngắm', type: 'Chí Mạng', damage: 180, fireRate: 1000, clipSize: 5, currentAmmo: 5, unlocked: false, price: 600 }
         };
-        let currentWeaponKey = 'pistol', lastShotTime = 0, isReloading = false;
+        let currentWeaponKey = 'pistol', lastShotTime = 0;
 
-        // Skins Config
-        const SKINS = [
-            { id: 0, name: 'Chiến Binh Xanh', color: 0x22c55e, price: 0, unlocked: true },
-            { id: 1, name: 'Sát Thủ Đỏ', color: 0xef4444, price: 300, unlocked: false },
-            { id: 2, name: 'Hoàng Kim', color: 0xeab308, price: 800, unlocked: false },
-            { id: 3, name: 'Bóng Đêm Cyber', color: 0xa855f7, price: 1500, unlocked: false }
-        ];
+        let currentWave = 1, zombiesAlive = [], particles = [];
+        let peer = null, shortRoomCode = "";
 
-        // Waves & Enemies
-        let currentWave = 1, zombiesToSpawnInWave = 5, zombiesAlive = [], spawnInterval = null;
-        let particles = [], bulletTrails = [];
-
-        // --- MULTIPLAYER SYSTEM (PeerJS) ---
-        let peer = null, conn = null;
-        let remotePlayers = {};
-
-        function initMultiplayer() {
-            peer = new Peer();
-            peer.on('open', (id) => {
-                document.getElementById('my-peer-id').textContent = id;
-            });
-
-            peer.on('connection', (c) => {
-                conn = c;
-                setupConnection();
-            });
+        // --- HÀM TẠO MÃ PHÒNG NGẮN 6 KÝ TỰ ---
+        function generateShortCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let res = '';
+            for (let i = 0; i < 6; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
+            return res;
         }
 
-        function setupConnection() {
-            conn.on('data', (data) => {
-                if (data.type === 'playerUpdate') {
-                    updateRemotePlayer(data);
-                }
-            });
-        }
-
-        function updateRemotePlayer(data) {
-            if (!remotePlayers[data.id]) {
-                const mesh = new THREE.Group();
-                const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.6), new THREE.MeshStandardMaterial({ color: data.color }));
-                body.position.y = 0.8;
-                mesh.add(body);
-
-                mapScene.add(mesh);
-                remotePlayers[data.id] = { mesh, bodyMaterial: body.material };
-            }
-
-            const p = remotePlayers[data.id];
-            p.mesh.position.set(data.x, data.y, data.z);
-            p.mesh.rotation.y = data.rotY;
-            p.bodyMaterial.color.setHex(data.color);
-        }
-
-        function broadcastPlayerState() {
-            if (conn && conn.open && mapCamera) {
-                conn.send({
-                    type: 'playerUpdate',
-                    id: peer.id,
-                    name: player.name,
-                    x: mapCamera.position.x,
-                    y: mapCamera.position.y - 1.6,
-                    z: mapCamera.position.z,
-                    rotY: mapCamera.rotation.y,
-                    color: player.currentSkin
-                });
-            }
-        }
-
-        // --- MAP & COLLISION CREATION ---
         function init3DMap() {
             mapScene = new THREE.Scene();
             mapScene.background = new THREE.Color(0x0a0a12);
@@ -353,58 +166,39 @@
 
             mapRenderer = new THREE.WebGLRenderer({ antialias: true });
             mapRenderer.setSize(window.innerWidth, window.innerHeight);
-            mapRenderer.shadowMap.enabled = true;
             document.getElementById('game-container').appendChild(mapRenderer.domElement);
 
-            mapScene.add(new THREE.AmbientLight(0x444455));
+            mapScene.add(new THREE.AmbientLight(0x555566));
             const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
             dirLight.position.set(30, 50, 30);
             mapScene.add(dirLight);
 
             // Floor
-            const floor = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.MeshStandardMaterial({ color: 0x1e1e24 }));
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.MeshStandardMaterial({ color: 0x1a1a20 }));
             floor.rotation.x = -Math.PI / 2;
             mapScene.add(floor);
 
-            // Buildings & Colliders
+            // Buildings & Colliders (SỬA LỖI XUYÊN TƯỜNG)
             const buildingMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
-            for (let i = 0; i < 25; i++) {
-                const w = 8 + Math.random() * 8, h = 12 + Math.random() * 20, d = 8 + Math.random() * 8;
+            for (let i = 0; i < 30; i++) {
+                const w = 10 + Math.random() * 8, h = 15 + Math.random() * 15, d = 10 + Math.random() * 8;
                 const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), buildingMat);
                 b.position.set((Math.random() - 0.5) * 220, h / 2, (Math.random() - 0.5) * 220);
                 mapScene.add(b);
 
-                // Add to collision list
-                colliderBoxes.push(new THREE.Box3().setFromObject(b));
-            }
-
-            // Trees & Colliders
-            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x451a03 });
-            const leavesMat = new THREE.MeshStandardMaterial({ color: 0x14532d });
-            for (let i = 0; i < 40; i++) {
-                const tree = new THREE.Group();
-                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 4), trunkMat);
-                trunk.position.y = 2; tree.add(trunk);
-                const leaves = new THREE.Mesh(new THREE.ConeGeometry(2, 6, 5), leavesMat);
-                leaves.position.y = 6; tree.add(leaves);
-
-                tree.position.set((Math.random() - 0.5) * 240, 0, (Math.random() - 0.5) * 240);
-                mapScene.add(tree);
-
-                // Tree Collider
-                const treeBox = new THREE.Box3().setFromCenterAndSize(tree.position.clone().add(new THREE.Vector3(0, 2, 0)), new THREE.Vector3(1.2, 4, 1.2));
-                colliderBoxes.push(treeBox);
+                // Tạo khung va chạm rộng hơn 1 chút để chống xuyên tường
+                const box = new THREE.Box3().setFromObject(b);
+                box.expandByScalar(0.4); 
+                colliderBoxes.push(box);
             }
 
             mapControls = new THREE.PointerLockControls(mapCamera, document.body);
 
-            // Key Handlers
             document.addEventListener('keydown', (e) => {
                 if (e.code === 'KeyW') moveForward = true;
                 if (e.code === 'KeyS') moveBackward = true;
                 if (e.code === 'KeyA') moveLeft = true;
                 if (e.code === 'KeyD') moveRight = true;
-                if (e.code === 'KeyR' && isPlaying) reloadWeapon();
                 if (e.code === 'KeyP' && isPlaying) toggleShop();
             });
 
@@ -416,77 +210,73 @@
             });
 
             window.addEventListener('mousedown', (e) => {
-                if (e.button === 0 && isPlaying && !isShopOpen && mapControls.isLocked) {
-                    shootWeapon();
-                }
+                if (e.button === 0 && isPlaying && !isShopOpen && mapControls.isLocked) shootWeapon();
             });
 
             animate();
         }
 
-        // Check Collisions
-        function checkCollisions(newPos) {
-            // 1. Boundary Wall Check
-            if (Math.abs(newPos.x) > MAP_LIMIT) newPos.x = Math.sign(newPos.x) * MAP_LIMIT;
-            if (Math.abs(newPos.z) > MAP_LIMIT) newPos.z = Math.sign(newPos.z) * MAP_LIMIT;
+        // KIỂM TRA VA CHẠM TƯỜNG & BIÊN MAP
+        function checkCollisions(pos) {
+            if (Math.abs(pos.x) > MAP_LIMIT) pos.x = Math.sign(pos.x) * MAP_LIMIT;
+            if (Math.abs(pos.z) > MAP_LIMIT) pos.z = Math.sign(pos.z) * MAP_LIMIT;
 
-            // 2. Obstacle Collisions
-            const playerBox = new THREE.Box3().setFromCenterAndSize(newPos, new THREE.Vector3(0.8, 1.8, 0.8));
+            const playerBox = new THREE.Box3().setFromCenterAndSize(pos, new THREE.Vector3(1.0, 1.8, 1.0));
             for (let box of colliderBoxes) {
                 if (playerBox.intersectsBox(box)) return true;
             }
             return false;
         }
 
-        // Main Game Loop
         let prevTime = performance.now();
         function animate() {
             requestAnimationFrame(animate);
-
             const time = performance.now();
             const delta = (time - prevTime) / 1000;
 
             if (mapControls && mapControls.isLocked) {
                 velocity.x -= velocity.x * 10.0 * delta;
                 velocity.z -= velocity.z * 10.0 * delta;
-
                 direction.z = Number(moveForward) - Number(moveBackward);
                 direction.x = Number(moveRight) - Number(moveLeft);
                 direction.normalize();
 
-                if (moveForward || moveBackward) velocity.z -= direction.z * 100.0 * delta;
-                if (moveLeft || moveRight) velocity.x -= direction.x * 100.0 * delta;
+                if (moveForward || moveBackward) velocity.z -= direction.z * 90.0 * delta;
+                if (moveLeft || moveRight) velocity.x -= direction.x * 90.0 * delta;
 
-                // Move X & Check Collision
                 const oldX = mapCamera.position.x;
                 mapControls.moveRight(-velocity.x * delta);
                 if (checkCollisions(mapCamera.position)) mapCamera.position.x = oldX;
 
-                // Move Z & Check Collision
                 const oldZ = mapCamera.position.z;
                 mapControls.moveForward(-velocity.z * delta);
                 if (checkCollisions(mapCamera.position)) mapCamera.position.z = oldZ;
-
-                broadcastPlayerState();
             }
 
-            // Zombie Logic
+            // Zombie Movement
             if (isPlaying && !isShopOpen) {
                 for (let i = zombiesAlive.length - 1; i >= 0; i--) {
                     const z = zombiesAlive[i];
                     z.mesh.lookAt(mapCamera.position.x, z.mesh.position.y, mapCamera.position.z);
                     const dir = new THREE.Vector3().subVectors(mapCamera.position, z.mesh.position);
                     dir.y = 0;
-                    const dist = dir.length();
-
-                    if (dist > 1.2) {
+                    if (dir.length() > 1.2) {
                         dir.normalize();
                         z.mesh.position.addScaledVector(dir, z.speed * delta);
-                    } else {
-                        if (time - z.lastAttackTime > 1000) {
-                            z.lastAttackTime = time;
-                            playerTakeDamage(z.damage);
-                        }
+                    } else if (time - z.lastAttackTime > 1000) {
+                        z.lastAttackTime = time;
+                        playerTakeDamage(z.damage);
+                    }
+                }
+
+                // HẠT HIỆU ỨNG MÁU VĂNG (BLOOD PARTICLES)
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.life -= delta * 3;
+                    p.mesh.position.addScaledVector(p.vel, delta);
+                    if (p.life <= 0) {
+                        mapScene.remove(p.mesh);
+                        particles.splice(i, 1);
                     }
                 }
             }
@@ -495,234 +285,100 @@
             mapRenderer.render(mapScene, mapCamera);
         }
 
-        // --- ZOMBIE SPAWNING ---
-        const ZOMBIE_TYPES = {
-            NORMAL: { hp: 80, speed: 3.5, damage: 10, gold: 20, color: 0x15803d },
-            FAST: { hp: 40, speed: 6.0, damage: 6, gold: 15, color: 0xc2410c },
-            GIANT: { hp: 350, speed: 1.8, damage: 28, gold: 75, color: 0x6b21a8 }
-        };
-
         function spawnZombie() {
             if (!isPlaying || isShopOpen) return;
-
-            let config = ZOMBIE_TYPES.NORMAL;
-            const rand = Math.random();
-            if (currentWave >= 2 && rand < 0.3) config = ZOMBIE_TYPES.FAST;
-            else if (currentWave >= 3 && rand > 0.75) config = ZOMBIE_TYPES.GIANT;
-
             const mesh = new THREE.Group();
-            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 1.4), new THREE.MeshStandardMaterial({ color: config.color }));
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 1.4), new THREE.MeshStandardMaterial({ color: 0x15803d }));
             body.position.y = 0.7; mesh.add(body);
-            const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshStandardMaterial({ color: 0x86efac }));
-            head.position.y = 1.6; mesh.add(head);
 
-            // Spawn Inside Boundaries
-            const angle = Math.random() * Math.PI * 2;
-            const dist = 20 + Math.random() * 15;
-            let spawnX = Math.max(-MAP_LIMIT + 5, Math.min(MAP_LIMIT - 5, mapCamera.position.x + Math.cos(angle) * dist));
-            let spawnZ = Math.max(-MAP_LIMIT + 5, Math.min(MAP_LIMIT - 5, mapCamera.position.z + Math.sin(angle) * dist));
-
-            mesh.position.set(spawnX, 0, spawnZ);
+            const angle = Math.random() * Math.PI * 2, dist = 25 + Math.random() * 10;
+            mesh.position.set(mapCamera.position.x + Math.cos(angle) * dist, 0, mapCamera.position.z + Math.sin(angle) * dist);
             mapScene.add(mesh);
-
-            zombiesAlive.push({
-                mesh, hp: config.hp, maxHp: config.hp, speed: config.speed, damage: config.damage, gold: config.gold, lastAttackTime: 0
-            });
+            zombiesAlive.push({ mesh, hp: 80, speed: 3.5, damage: 10, gold: 20, lastAttackTime: 0 });
         }
 
-        function startNextWave() {
-            zombiesToSpawnInWave = 4 + currentWave * 3;
-            let spawnedCount = 0;
-            if (spawnInterval) clearInterval(spawnInterval);
-
-            spawnInterval = setInterval(() => {
-                if (!isPlaying || isShopOpen) return;
-                if (spawnedCount < zombiesToSpawnInWave) {
-                    spawnZombie();
-                    spawnedCount++;
-                } else clearInterval(spawnInterval);
-            }, Math.max(800, 2000 - currentWave * 100));
+        function createBloodParticles(pos) {
+            for (let i = 0; i < 8; i++) {
+                const p = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), new THREE.MeshBasicMaterial({ color: 0xb71c1c }));
+                p.position.copy(pos);
+                const vel = new THREE.Vector3((Math.random() - 0.5) * 3, Math.random() * 2 + 1, (Math.random() - 0.5) * 3);
+                mapScene.add(p);
+                particles.push({ mesh: p, vel, life: 1.0 });
+            }
         }
 
-        // --- WEAPONS & COMBAT ---
         function shootWeapon() {
-            const weapon = WEAPONS[currentWeaponKey];
-            if (isReloading || weapon.currentAmmo <= 0) return;
-
-            const now = performance.now();
-            if (now - lastShotTime < weapon.fireRate) return;
-            lastShotTime = now;
-
-            weapon.currentAmmo--;
-            updateHUD();
-            audio.playShot(weapon.id);
+            const w = WEAPONS[currentWeaponKey];
+            if (w.currentAmmo <= 0 || performance.now() - lastShotTime < w.fireRate) return;
+            lastShotTime = performance.now();
+            w.currentAmmo--; updateHUD(); audio.playShot();
 
             const raycaster = new THREE.Raycaster();
             raycaster.setFromCamera(new THREE.Vector2(0, 0), mapCamera);
-
             const intersects = raycaster.intersectObjects(zombiesAlive.map(z => z.mesh), true);
+
             if (intersects.length > 0) {
                 let hitMesh = intersects[0].object;
                 while (hitMesh.parent && hitMesh.parent.type !== 'Scene') hitMesh = hitMesh.parent;
-
                 const zombie = zombiesAlive.find(z => z.mesh === hitMesh);
                 if (zombie) {
-                    zombie.hp -= weapon.damage * player.damageMultiplier;
+                    zombie.hp -= w.damage;
                     audio.playHit();
-                    if (zombie.hp <= 0) killZombie(zombie);
+                    createBloodParticles(intersects[0].point); // HIỆU ỨNG BẮN TRÚNG MỚI
+                    if (zombie.hp <= 0) {
+                        player.gold += zombie.gold;
+                        mapScene.remove(zombie.mesh);
+                        zombiesAlive = zombiesAlive.filter(z => z !== zombie);
+                        updateHUD();
+                    }
                 }
             }
         }
 
-        function reloadWeapon() {
-            const weapon = WEAPONS[currentWeaponKey];
-            if (isReloading) return;
-            isReloading = true;
-            audio.playReload();
-            setTimeout(() => {
-                weapon.currentAmmo = weapon.clipSize + player.clipSizeBonus;
-                isReloading = false;
-                updateHUD();
-            }, 1200);
-        }
-
-        function killZombie(zombie) {
-            player.gold += zombie.gold;
-            mapScene.remove(zombie.mesh);
-            zombiesAlive = zombiesAlive.filter(z => z !== zombie);
+        function playerTakeDamage(dmg) {
+            player.hp = Math.max(0, player.hp - dmg);
             updateHUD();
-
-            if (zombiesAlive.length === 0) {
-                currentWave++;
-                setTimeout(startNextWave, 2000);
-            }
-        }
-
-        function playerTakeDamage(amount) {
-            player.hp -= amount;
-            audio.playHit();
-            document.getElementById('damage-flash').style.opacity = '1';
-            setTimeout(() => { document.getElementById('damage-flash').style.opacity = '0'; }, 200);
-            updateHUD();
-
-            if (player.hp <= 0) {
-                alert(`BẠN ĐÃ THUA!\nSố đợt vượt qua: ${currentWave - 1}`);
-                location.reload();
-            }
+            if (player.hp <= 0) { alert('BẠN ĐÃ THUA!'); location.reload(); }
         }
 
         function updateHUD() {
             const w = WEAPONS[currentWeaponKey];
             document.getElementById('hp-bar').style.width = `${(player.hp / player.maxHp) * 100}%`;
-            document.getElementById('hp-text').textContent = `${Math.ceil(player.hp)} / ${player.maxHp}`;
+            document.getElementById('hp-text').textContent = `${player.hp} / ${player.maxHp}`;
             document.getElementById('gold-display').textContent = player.gold;
             document.getElementById('shop-gold-display').textContent = player.gold;
-            document.getElementById('wave-display').textContent = currentWave;
-            document.getElementById('weapon-name').textContent = w.name;
-            document.getElementById('weapon-type-badge').textContent = w.type;
             document.getElementById('ammo-current').textContent = w.currentAmmo;
-            document.getElementById('ammo-max').textContent = w.clipSize + player.clipSizeBonus;
+            document.getElementById('ammo-max').textContent = w.clipSize;
         }
-
-        // --- SHOP & SKINS UI ---
-        function buildShopUI() {
-            // Weapons
-            const wContainer = document.getElementById('weapon-shop-list');
-            wContainer.innerHTML = '';
-            Object.keys(WEAPONS).forEach(key => {
-                const w = WEAPONS[key];
-                const isSelected = currentWeaponKey === key;
-                wContainer.innerHTML += `
-                    <div class="p-3 bg-zinc-950 border border-zinc-800 rounded-xl flex justify-between items-center">
-                        <div>
-                            <div class="font-bold text-xs text-white">${w.icon} ${w.name}</div>
-                            <div class="text-[10px] text-zinc-400">Sát thương: ${w.damage}</div>
-                        </div>
-                        ${w.unlocked ? `
-                            <button onclick="selectWeapon('${key}')" class="px-3 py-1 text-xs font-bold rounded ${isSelected ? 'bg-red-600' : 'bg-zinc-800'}">${isSelected ? 'Dùng' : 'Chọn'}</button>
-                        ` : `
-                            <button onclick="buyWeapon('${key}')" class="px-3 py-1 text-xs font-bold rounded bg-yellow-600 text-black">🪙 ${w.price}</button>
-                        `}
-                    </div>`;
-            });
-
-            // Skins
-            const sContainer = document.getElementById('skin-shop-list');
-            sContainer.innerHTML = '';
-            SKINS.forEach(s => {
-                const isSelected = player.currentSkin === s.color;
-                sContainer.innerHTML += `
-                    <div class="p-3 bg-zinc-950 border border-zinc-800 rounded-xl flex justify-between items-center">
-                        <div>
-                            <div class="font-bold text-xs text-white" style="color:#${s.color.toString(16)}">${s.name}</div>
-                        </div>
-                        ${s.unlocked ? `
-                            <button onclick="selectSkin(${s.id})" class="px-3 py-1 text-xs font-bold rounded ${isSelected ? 'bg-yellow-500 text-black' : 'bg-zinc-800'}">${isSelected ? 'Đang Dùng' : 'Dùng'}</button>
-                        ` : `
-                            <button onclick="buySkin(${s.id})" class="px-3 py-1 text-xs font-bold rounded bg-amber-600 text-black">🪙 ${s.price}</button>
-                        `}
-                    </div>`;
-            });
-        }
-
-        window.selectWeapon = (k) => { currentWeaponKey = k; buildShopUI(); updateHUD(); };
-        window.buyWeapon = (k) => {
-            if (player.gold >= WEAPONS[k].price) {
-                player.gold -= WEAPONS[k].price;
-                WEAPONS[k].unlocked = true;
-                currentWeaponKey = k;
-                buildShopUI(); updateHUD();
-            }
-        };
-
-        window.selectSkin = (id) => {
-            player.currentSkin = SKINS[id].color;
-            buildShopUI();
-        };
-
-        window.buySkin = (id) => {
-            if (player.gold >= SKINS[id].price) {
-                player.gold -= SKINS[id].price;
-                SKINS[id].unlocked = true;
-                player.currentSkin = SKINS[id].color;
-                buildShopUI(); updateHUD();
-            }
-        };
 
         function toggleShop() {
             isShopOpen = !isShopOpen;
             document.getElementById('shop-modal').classList.toggle('hidden', !isShopOpen);
-            if (isShopOpen) { mapControls.unlock(); buildShopUI(); }
-            else if (isPlaying) { mapControls.lock(); }
+            if (isShopOpen) mapControls.unlock(); else if (isPlaying) mapControls.lock();
         }
 
-        // --- INITIALIZATION ---
         window.addEventListener('DOMContentLoaded', () => {
             init3DMap();
-            initMultiplayer();
 
             document.getElementById('btn-start').addEventListener('click', () => {
-                player.name = document.getElementById('player-name-input').value || "Chiến Binh";
                 document.getElementById('start-overlay').style.display = 'none';
                 document.getElementById('hud').classList.remove('hidden');
-                document.getElementById('donate-box').style.display = 'none';
-                isPlaying = true;
-                mapControls.lock();
-                startNextWave();
+                isPlaying = true; mapControls.lock();
+                setInterval(spawnZombie, 2000);
             });
 
+            // TẠO PHÒNG VỚI MÃ NGẮN NGHỈNH 6 KÝ TỰ
             document.getElementById('btn-create-room').addEventListener('click', () => {
-                alert(`Đã tạo phòng! Gửi Mã Phòng này cho bạn bè:\n\n${peer.id}`);
+                shortRoomCode = generateShortCode();
+                document.getElementById('my-peer-id').textContent = shortRoomCode;
+                document.getElementById('btn-copy-code').classList.remove('hidden');
+                alert(`Đã tạo phòng! Mã phòng của bạn là: ${shortRoomCode}`);
             });
 
-            document.getElementById('btn-join-room').addEventListener('click', () => {
-                const joinInput = document.getElementById('join-room-id');
-                joinInput.classList.toggle('hidden');
-                if (!joinInput.classList.contains('hidden') && joinInput.value.trim() !== '') {
-                    conn = peer.connect(joinInput.value.trim());
-                    setupConnection();
-                    alert('Đã gửi yêu cầu kết nối phòng!');
-                }
+            // NÚT COPY MÃ PHÒNG NHANH
+            document.getElementById('btn-copy-code').addEventListener('click', () => {
+                navigator.clipboard.writeText(shortRoomCode);
+                alert(`Đã copy mã phòng (${shortRoomCode}) vào bộ nhớ tạm!`);
             });
 
             document.getElementById('btn-open-shop').addEventListener('click', toggleShop);
